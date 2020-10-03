@@ -4,8 +4,9 @@
 
 ## インストール
 ```
+wget https://github.com/gnuhead-chieb/add-apt-repository-enhanched/raw/main/add-apt-repository
 sudo mv /usr/bin/add-apt-repository /usr/bin/add-apt-repository.bak
-sudo mv ./add-apt-repository /usr/bin/
+sudo cp ./add-apt-repository /usr/bin/
 ```
 
 ## 使用法
