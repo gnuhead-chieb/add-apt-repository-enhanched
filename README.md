@@ -8,6 +8,7 @@
 wget https://github.com/gnuhead-chieb/add-apt-repository-enhanched/raw/main/add-apt-repository
 sudo mv /usr/bin/add-apt-repository /usr/bin/add-apt-repository.bak
 sudo cp ./add-apt-repository /usr/bin/
+sudo chmod +x /usr/bin/add-apt-repository
 ```
 
 ## 使用法
