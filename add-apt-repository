@@ -1,0 +1,92 @@
+#!/bin/bash
+
+function func_help () {
+echo "使用法: add-apt-repository [options] repository"
+echo
+echo "Options:"
+echo "  -h, --help        このヘルプを表示して終了します。"
+echo "  -y, --yes         全ての確認を同意したものとみなしてそのまま続行する。"
+echo "  -r, --remove      指定されたリポジトリを消去する。"
+echo "  -e, --exc-src     ppaリポジトリでソースコードを登録しない。"
+echo "  -v, --ppaver=ARCH ppaリポジトリでバージョンを個別に指定する。" ##あとで
+echo "  -u, --update      リポジトリを追加/削除したあとにパッケージリストの更新を行う。"
+exit 0
+}
+
+function func_ppa () {
+identifier=`echo ${repo} | cut -c 5-`
+identifier_formatted=${identifier/\//\-}
+identifier_dist=`echo ${identifier} | awk -F "/" '{ print $NR}'`
+identifier_arc=`echo ${identifier} | awk -F "/" '{ print $NF}'`
+arch=`cat /etc/os-release | grep UBUNTU_CODENAME | cut -c 17-`
+
+[[ ${flag_remove} = 1 ]] && func_remove_ppa || func_add_ppa
+[[ ${flag_update} = 1 ]] && apt update || :
+}
+function func_add_ppa () {
+if [[ ${yes} != 1 ]]; then
+echo ${repo} :このリポジトリを追加しますか？続行するにはEnter、中止するにはCtrl+Cを押してください
+read -p ""
+fi
+echo deb http://ppa.launchpad.net/${identifier}/ubuntu $arch main >/etc/apt/sources.list.d/${identifier_formatted}-${arch}.list
+[[ ${flag_excsrc} != 1 ]] && \
+echo deb-src http://ppa.launchpad.net/${identifier}/ubuntu $arch main >>/etc/apt/sources.list.d/${identifier_formatted}-${arch}.list
+:;
+key=`wget -q -O - https://api.launchpad.net/1.0/~${identifier_dist}/+archive/${identifier_arc} | jq -r '.signing_key_fingerprint'`
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys ${key}
+}
+
+function func_remove_ppa () {
+if [[ ${yes} != 1 ]]; then
+echo $repo :このリポジトリを削除しますか？続行するにはEnter、中止するにはCtrl+Cを押してください
+read -p ""
+fi
+rm /etc/apt/sources.list.d/${identifier_formatted}-${arch}.list
+key=`wget -q -O - https://api.launchpad.net/1.0/~${identifier_dist}/+archive/${identifier_arc} | jq -r '.signing_key_fingerprint'`
+apt-key del ${key}
+}
+
+function func_adtrepo () {
+[[ ${flag_remove} = 1 ]] && func_remove_adtrepo || func_add_adtrepo
+[[ ${flag_update} = 1 ]] && apt update || :
+}
+function func_add_adtrepo () {
+if [[ ${yes} != 1 ]]; then
+echo ${repo} :このリポジトリを追加しますか？続行するにはEnter、中止するにはCtrl+Cを押してください
+read -p ""
+fi
+echo ${repo} >>/etc/apt/sources.list.d/additional-repositories.list
+}
+function func_remove_adtrepo () {
+if [[ ${yes} != 1 ]]; then
+echo ${repo} :このリポジトリを削除しますか？続行するにはEnter、中止するにはCtrl+Cを押してください
+read -p ""
+fi
+echo あとでやる
+}
+
+arg=("$@")
+for i in `seq 0 $#`
+do
+if [[ ${arg[$i]} == "-"* ]]; then
+case ${arg[$i]} in
+"-h" | "--help" ) func_help ;;
+"-y" | "--yes" ) eval yes=1 ;;
+"-e" | "--exc-src" ) eval flag_excsrc=1 ;;
+"-r" | "--remove" ) eval flag_remove=1 ;;
+"-u" | "--update" ) eval flag_update=1 ;;
+esac
+
+elif [[ ${arg[$i]} == "ppa:"* ]]; then
+flag_ppa=1
+[ $repo ] || eval repo=${arg[$i]}
+else
+[ $repo ] || eval repo=${arg[$i]}
+fi
+done
+
+[[ ${flag_ppa} = 1 ]] && func_ppa || func_adtrepo
+
+
+
+
