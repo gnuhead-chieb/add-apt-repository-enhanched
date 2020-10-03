@@ -1,5 +1,6 @@
 # add-apt-repository-enhanched
 シェルスクリプトで記述された高機能なadd-apt-repositoryです。
+
 昔OS標準のadd-apt-repositoryがバグって動かなくなったときに代用品として自作したものですがこのまま闇に埋もれてしまうのは哀しいですので公開します。
 
 ## インストール
